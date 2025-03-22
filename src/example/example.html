@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cre.ate Example</title>
+    <script src="../cre.ate.js"></script>
+</head>
+<body>
+
+    <cre-sidebar></cre-sidebar>
+    <cre-main></cre-main>
+    <cre-counter></cre-counter>
+    <cre-static></cre-static>
+
+    <script>
+        // Test with cre-counter
+        Cre.ate('cre-counter', {
+            initialState: { count: 0 },
+            template: (state) => `
+                <button @click="increment">Increment: ${state.count}</button>
+            `,
+            actions: {
+                increment(state) {
+                    state.count += 1;
+                }
+            }
+        });
+
+        Cre.ate('cre-sidebar', {
+            initialState: { items: ['Item 1', 'Item 2'], selected: null },
+            template: (state) => `
+                <style>
+                    ul { list-style: none; padding: 10px; }
+                    li { padding: 5px; }
+                    li:hover { background: #eee; cursor: pointer; }
+                    .selected { background: #ddd; }
+                </style>
+                <ul>
+                ${state.items.map((item, i) => `
+                    <li @click="select(${i})" class="${state.selected === i ? 'selected' : ''}">
+                        ${item}
+                    </li>
+                `).join('')}
+                </ul>
+            `,
+            actions: {
+                select(state, index) {
+                    state.selected = index;
+                    Cre.emit('sidebar-select', index);
+                }
+            }
+        });
+
+        Cre.ate('cre-main', {
+            initialState: { content: 'Select an item from the sidebar' },
+            template: (state) => `
+                <style>
+                    div { padding: 20px; }
+                </style>
+                <div>${state.content}</div>
+            `,
+            actions: {
+                updateContent(state, text) {
+                    state.content = text;
+                }
+            }
+        });
+
+        Cre.on('sidebar-select', (index) => {
+            document.querySelector('cre-main').actions.updateContent(`You selected item ${index + 1}`);
+        });
+
+        Cre.ate('cre-static', {
+            template: () => `<p>Static content</p>`
+        });
+
+        const counter = Cre.get('cre-counter');
+        if (counter) {
+            counter.actions.increment(); // Updates to "Increment: 1"
+            console.log(counter.state.count); // 1
+        }
+
+        // Get cre-sidebar and select an item
+        const sidebar = Cre.get('cre-sidebar');
+        if (sidebar) {
+            sidebar.actions.select(0); // Highlights "Item 1" and updates cre-main
+            console.log(sidebar.state.selected); // 0
+        }
+
+        // Get cre-main and update its content
+        const main = Cre.get('cre-main');
+        if (main) {
+            main.actions.updateContent('Hello from outside!');
+            console.log(main.state.content); // "Hello from outside!"
+        }
+    </script>
+</body>
+</html>
